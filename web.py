@@ -194,7 +194,7 @@ def create_app(mentor: Mentor, users: Users, telegram=None, articles=None, push=
     async def config():
         return {"require_invite": cfg.REQUIRE_INVITE,
                 "telegram_bot": getattr(telegram, "bot_username", None), "total_lessons": cur.TOTAL_LESSONS,
-                "timezone": cfg.TZ.key}
+                "timezone": cfg.TZ.key, "server_url": cfg.RENDER_URL or None}
 
     failed, signups = {}, {}  # ip -> [timestamps]   (in memory; resets on restart)
 
