@@ -5,7 +5,8 @@ plugins {
     id 'com.android.application'
 }
 
-def host = project.findProperty('mentorHost') ?: 'example.ngrok-free.dev'
+def host = project.findProperty('mentorHost') ?: 'example.onrender.com'          // main address (Render)
+def backupHost = project.findProperty('backupHost') ?: ''                       // backup (the ngrok link)
 def keyProps = new Properties()
 def keyFile = file(project.findProperty('keystoreProps') ?: 'missing.properties')
 if (keyFile.exists()) { keyFile.withInputStream { keyProps.load(it) } }
@@ -21,9 +22,10 @@ android {
         applicationId 'com.dataarchitectmentor.app'
         minSdk 23
         targetSdk 36          // latest Android: older targets make Play Protect more suspicious
-        versionCode 4
-        versionName '3.1'
+        versionCode 5
+        versionName '3.2'
         buildConfigField 'String', 'SITE_URL', "\"https://${host}\""
+        buildConfigField 'String', 'BACKUP_URL', backupHost ? "\"https://${backupHost}\"" : '""'
     }
 
     buildFeatures {

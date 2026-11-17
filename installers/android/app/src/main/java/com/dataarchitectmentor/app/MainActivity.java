@@ -30,9 +30,26 @@ import android.webkit.WebViewClient;
 
 /** The whole app: the mentor site in a full-screen view, plus a small bridge so the site can set the alarms. */
 public class MainActivity extends Activity {
-    static final String SITE = BuildConfig.SITE_URL;
-    static final String HOST = Uri.parse(SITE).getHost();
+    /** Main address (Render) and a backup (the ngrok link). The app switches to the other one by itself if one fails. */
+    static final String PRIMARY = BuildConfig.SITE_URL;
+    static final String BACKUP = BuildConfig.BACKUP_URL;
+    static volatile String SITE = PRIMARY;
     private WebView web;
+
+    static boolean isOurs(Uri u) {
+        String h = u.getHost();
+        return h != null && (h.equalsIgnoreCase(Uri.parse(PRIMARY).getHost())
+            || (!BACKUP.isEmpty() && h.equalsIgnoreCase(Uri.parse(BACKUP).getHost())));
+    }
+
+    /** The same page on whichever address is in use now. */
+    static String onCurrentSite(String url) {
+        if (url == null) return null;
+        for (String base : new String[]{PRIMARY, BACKUP}) {
+            if (!base.isEmpty() && url.startsWith(base)) return SITE + url.substring(base.length());
+        }
+        return url;
+    }
 
     @SuppressLint("SetJavaScriptEnabled")
     @Override
@@ -95,7 +112,7 @@ public class MainActivity extends Activity {
 
             @Override
             public void onReceivedError(WebView view, WebResourceRequest req, WebResourceError err) {
-                if (req.isForMainFrame()) showOffline(req.getUrl().toString());
+                if (req.isForMainFrame()) siteFailed(req.getUrl().toString());
             }
 
             /** The tunnel's own error page (mentor's PC asleep / reconnecting) must never be shown: use ours. */
@@ -106,7 +123,7 @@ public class MainActivity extends Activity {
                     && (res.getResponseHeaders().containsKey("ngrok-error-code")
                         || res.getResponseHeaders().containsKey("Ngrok-Error-Code"));
                 int code = res.getStatusCode();
-                if (tunnel || code == 404 || code >= 500) showOffline(req.getUrl().toString());
+                if (tunnel || code == 404 || code >= 500) siteFailed(req.getUrl().toString());
             }
         });
 
@@ -119,7 +136,7 @@ public class MainActivity extends Activity {
 
     /** Pages of the mentor site stay in the app; everything else (articles, Telegram...) opens outside. */
     private boolean openOutside(Uri uri) {
-        if (HOST.equalsIgnoreCase(uri.getHost()) && !uri.getPath().startsWith("/download/")) return false;
+        if (isOurs(uri) && !uri.getPath().startsWith("/download/")) return false;
         try {
             startActivity(new Intent(Intent.ACTION_VIEW, uri));
         } catch (Exception ignored) { }
@@ -143,8 +160,21 @@ public class MainActivity extends Activity {
     private String resumeUrl = null;
     private boolean offline = false;
 
+    private boolean triedOther = false;
+
+    /** A page failed: first quietly try the other address; only if that fails too, show the "right back" screen. */
+    private void siteFailed(String url) {
+        if (!offline && !triedOther && !BACKUP.isEmpty() && url != null && isOurs(Uri.parse(url))) {
+            triedOther = true;
+            SITE = SITE.equals(PRIMARY) ? BACKUP : PRIMARY;
+            web.loadUrl(onCurrentSite(url));
+            return;
+        }
+        showOffline(url);
+    }
+
     private void showOffline(String failedUrl) {
-        if (failedUrl != null && failedUrl.startsWith(SITE)) resumeUrl = failedUrl;
+        if (failedUrl != null && isOurs(Uri.parse(failedUrl))) resumeUrl = failedUrl;
         if (offline) return;
         offline = true;
         String html = "<html><head><meta name='viewport' content='width=device-width,initial-scale=1'></head>"
@@ -166,19 +196,10 @@ public class MainActivity extends Activity {
     private void probe() {
         if (!offline) return;
         new Thread(() -> {
-            boolean up = false;
-            try {
-                java.net.HttpURLConnection c = (java.net.HttpURLConnection) new java.net.URL(SITE + "/api/config").openConnection();
-                c.setConnectTimeout(6000);
-                c.setReadTimeout(6000);
-                c.setRequestProperty("User-Agent", Alarms.USER_AGENT);
-                up = c.getResponseCode() == 200 && c.getHeaderField("ngrok-error-code") == null;
-                c.disconnect();
-            } catch (Exception ignored) { }
-            final boolean back = up;
+            String up = Alarms.firstWorkingSite();   // main address first, then the backup
             handler.post(() -> {
                 if (!offline) return;
-                if (back) reconnect();
+                if (up != null) { SITE = up; reconnect(); }
                 else handler.postDelayed(this::probe, 15000);
             });
         }).start();
@@ -186,8 +207,9 @@ public class MainActivity extends Activity {
 
     private void reconnect() {
         offline = false;
+        triedOther = false;
         handler.removeCallbacksAndMessages(null);
-        web.loadUrl(resumeUrl != null ? resumeUrl : SITE + "/?source=android-app#home");
+        web.loadUrl(resumeUrl != null ? onCurrentSite(resumeUrl) : SITE + "/?source=android-app#home");
     }
 
     private void askForNotificationPermission() {
@@ -227,7 +249,7 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public void retryNow() {
-            handler.post(MainActivity.this::reconnect);
+            handler.post(MainActivity.this::probe);
         }
 
         @JavascriptInterface

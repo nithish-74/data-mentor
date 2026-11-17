@@ -37,14 +37,22 @@
     // Check every 15 s whether the mentor answers again; then go back to where the learner was.
     // shown either at its own address or in place of the page the learner asked for: go back to that page
     const target = location.pathname.endsWith("/offline.html") ? "/" : location.pathname + location.search + location.hash;
+    // The mentor has two addresses (its main one and a backup link). If this one is down, try the other.
+    const ADDRESSES = ["https://data-mentor-87i7.onrender.com", "https://cloning-charting-reprimand.ngrok-free.dev"];
+    const other = ADDRESSES.find((a) => !a.includes(location.host));
     let tries = 0;
+    async function answers(base) {
+      try {
+        const r = await fetch(base + "/api/config", { cache: "no-store", mode: base ? "cors" : "same-origin",
+          headers: { "ngrok-skip-browser-warning": "1" } });
+        return r.ok && !r.headers.get("ngrok-error-code");
+      } catch (_) { return false; }
+    }
     async function check() {
       tries++;
       document.getElementById("when").textContent = "Checked " + tries + (tries === 1 ? " time" : " times") + ".";
-      try {
-        const r = await fetch("/api/config", { cache: "no-store", headers: { "ngrok-skip-browser-warning": "1" } });
-        if (r.ok && !r.headers.get("ngrok-error-code")) { location.replace(target); return; }
-      } catch (_) { /* still offline */ }
+      if (await answers("")) { location.replace(target); return; }
+      if (other && await answers(other)) { location.replace(other + target); return; }
       setTimeout(check, 15000);
     }
     document.getElementById("retry").onclick = () => location.replace(target);

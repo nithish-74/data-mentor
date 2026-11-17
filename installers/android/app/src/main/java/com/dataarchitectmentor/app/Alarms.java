@@ -117,8 +117,14 @@ final class Alarms {
         boolean test = "test".equals(slot);
         List<String[]> msgs = new ArrayList<>();
         try {
-            String url = MainActivity.SITE + "/api/app/digest?" + (test ? "test=1" : "slot=" + Uri.encode(slot));
-            JSONObject r = new JSONObject(get(url));
+            String query = "/api/app/digest?" + (test ? "test=1" : "slot=" + Uri.encode(slot));
+            JSONObject r = null;
+            Exception last = null;
+            for (String base : new String[]{MainActivity.PRIMARY, MainActivity.BACKUP}) {  // main address, then backup
+                if (base.isEmpty()) continue;
+                try { r = new JSONObject(get(base, query)); break; } catch (Exception e) { last = e; }
+            }
+            if (r == null) throw last != null ? last : new Exception("no address");
             JSONArray items = r.optJSONArray("notifications");
             for (int i = 0; items != null && i < items.length(); i++) {
                 JSONObject m = items.getJSONObject(i);
@@ -139,13 +145,30 @@ final class Alarms {
         }
     }
 
-    private static String get(String url) throws Exception {
-        HttpURLConnection con = (HttpURLConnection) new URL(url).openConnection();
+    /** First address that answers, main one first; null if neither does. Runs off the main thread. */
+    static String firstWorkingSite() {
+        for (String base : new String[]{MainActivity.PRIMARY, MainActivity.BACKUP}) {
+            if (base.isEmpty()) continue;
+            try {
+                HttpURLConnection c = (HttpURLConnection) new URL(base + "/api/config").openConnection();
+                c.setConnectTimeout(6000);
+                c.setReadTimeout(6000);
+                c.setRequestProperty("User-Agent", USER_AGENT);
+                boolean ok = c.getResponseCode() == 200 && c.getHeaderField("ngrok-error-code") == null;
+                c.disconnect();
+                if (ok) return base;
+            } catch (Exception ignored) { }
+        }
+        return null;
+    }
+
+    private static String get(String base, String path) throws Exception {
+        HttpURLConnection con = (HttpURLConnection) new URL(base + path).openConnection();
         con.setConnectTimeout(8000);
         con.setReadTimeout(8000);
         con.setRequestProperty("User-Agent", USER_AGENT);
         con.setRequestProperty("ngrok-skip-browser-warning", "1");
-        String cookie = CookieManager.getInstance().getCookie(MainActivity.SITE);
+        String cookie = CookieManager.getInstance().getCookie(base);
         if (cookie != null) con.setRequestProperty("Cookie", cookie);
         if (con.getResponseCode() != 200) throw new Exception("HTTP " + con.getResponseCode());
         StringBuilder sb = new StringBuilder();

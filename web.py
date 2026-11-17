@@ -102,7 +102,9 @@ def create_app(mentor: Mentor, users: Users, telegram=None, articles=None, push=
 
     @app.get("/download/android")
     async def download_android():
-        apk = cfg.HERE / "dist" / "DataArchitectMentor.apk"
+        apk = STATIC / "downloads" / "DataArchitectMentor.apk"
+        if not apk.exists():
+            apk = cfg.HERE / "dist" / "DataArchitectMentor.apk"
         if not apk.exists():
             raise HTTPException(404, "The Android app hasn't been built yet")
         return FileResponse(apk, media_type="application/vnd.android.package-archive",
@@ -190,11 +192,20 @@ def create_app(mentor: Mentor, users: Users, telegram=None, articles=None, push=
         users.save()
         return {"notify": u["notify"], "schedule": schedule_for(u)}
 
+    # /api/config is public and harmless; the "right back" page on one address may check the other address.
+    OPEN = {"Access-Control-Allow-Origin": "*", "Access-Control-Allow-Methods": "GET",
+            "Access-Control-Allow-Headers": "ngrok-skip-browser-warning"}
+
+    @app.options("/api/config")
+    async def config_preflight():
+        return JSONResponse({}, headers=OPEN)
+
     @app.get("/api/config")
     async def config():
-        return {"require_invite": cfg.REQUIRE_INVITE,
-                "telegram_bot": getattr(telegram, "bot_username", None), "total_lessons": cur.TOTAL_LESSONS,
-                "timezone": cfg.TZ.key, "server_url": cfg.RENDER_URL or None}
+        return JSONResponse({"require_invite": cfg.REQUIRE_INVITE,
+                             "telegram_bot": getattr(telegram, "bot_username", None),
+                             "total_lessons": cur.TOTAL_LESSONS, "timezone": cfg.TZ.key,
+                             "server_url": cfg.RENDER_URL or None}, headers=OPEN)
 
     failed, signups = {}, {}  # ip -> [timestamps]   (in memory; resets on restart)
 
