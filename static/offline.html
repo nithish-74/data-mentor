@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Mentor will be right back</title>
+  <meta name="theme-color" content="#16202b">
+  <style>
+    :root { color-scheme: dark; }
+    html, body { margin: 0; height: 100%; }
+    body { background: #16202b; color: #e6ebf0; font: 16px/1.6 "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+      display: grid; place-items: center; text-align: center;
+      padding: max(24px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left)); box-sizing: border-box; }
+    main { max-width: 380px; display: flex; flex-direction: column; align-items: center; gap: 14px; }
+    h1 { font: 650 1.5rem/1.25 "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif; margin: 0; }
+    p { margin: 0; color: #a3b0bd; }
+    button { margin-top: 6px; font: 600 1rem inherit; padding: 12px 22px; border: 0; border-radius: 8px;
+      background: #7fb2dd; color: #0c1620; cursor: pointer; }
+    .dots { display: inline-flex; gap: 5px; margin-top: 4px; }
+    .dots i { width: 7px; height: 7px; border-radius: 50%; background: #7fb2dd; animation: bob 1.2s infinite ease-in-out; }
+    .dots i:nth-child(2) { animation-delay: .15s; } .dots i:nth-child(3) { animation-delay: .3s; }
+    @keyframes bob { 0%, 80%, 100% { opacity: .25; } 40% { opacity: 1; } }
+    @media (prefers-reduced-motion: reduce) { .dots i { animation: none; opacity: .7; } }
+    .hint { font-size: .85rem; color: #6f7d8b; }
+  </style>
+</head>
+<body>
+  <main>
+    <svg width="56" height="56" viewBox="0 0 32 32" aria-hidden="true"><rect x="5" y="7" width="13" height="18" rx="2" fill="none" stroke="#7fb2dd" stroke-width="2"/><path d="M18 16h7M25 11l-4 5 4 5" fill="none" stroke="#f6d365" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <h1>Mentor will be right back</h1>
+    <p>The mentor's computer is waking up or reconnecting. Your progress is safe. This page opens by itself as soon as it's back.</p>
+    <span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>
+    <button type="button" id="retry">Try again now</button>
+    <p class="hint" id="when"></p>
+  </main>
+  <script>
+    // Check every 15 s whether the mentor answers again; then go back to where the learner was.
+    // shown either at its own address or in place of the page the learner asked for: go back to that page
+    const target = location.pathname.endsWith("/offline.html") ? "/" : location.pathname + location.search + location.hash;
+    let tries = 0;
+    async function check() {
+      tries++;
+      document.getElementById("when").textContent = "Checked " + tries + (tries === 1 ? " time" : " times") + ".";
+      try {
+        const r = await fetch("/api/config", { cache: "no-store", headers: { "ngrok-skip-browser-warning": "1" } });
+        if (r.ok && !r.headers.get("ngrok-error-code")) { location.replace(target); return; }
+      } catch (_) { /* still offline */ }
+      setTimeout(check, 15000);
+    }
+    document.getElementById("retry").onclick = () => location.replace(target);
+    setTimeout(check, 5000);
+  </script>
+</body>
+</html>

@@ -1,0 +1,59 @@
+// Data Architect Mentor for Android: a native app that shows the mentor site in its own full-screen view
+// (no browser bar) and rings the learner's study reminders as alarms (sound + vibration).
+// Built by installers\build_android.ps1, which passes the site address and the signing key.
+plugins {
+    id 'com.android.application'
+}
+
+def host = project.findProperty('mentorHost') ?: 'example.ngrok-free.dev'
+def keyProps = new Properties()
+def keyFile = file(project.findProperty('keystoreProps') ?: 'missing.properties')
+if (keyFile.exists()) { keyFile.withInputStream { keyProps.load(it) } }
+
+// keep build output out of OneDrive
+layout.buildDirectory = file("${System.getenv('USERPROFILE')}/.data-mentor/build/android-app")
+
+android {
+    namespace 'com.dataarchitectmentor.app'
+    compileSdk 36
+
+    defaultConfig {
+        applicationId 'com.dataarchitectmentor.app'
+        minSdk 23
+        targetSdk 36          // latest Android: older targets make Play Protect more suspicious
+        versionCode 4
+        versionName '3.1'
+        buildConfigField 'String', 'SITE_URL', "\"https://${host}\""
+    }
+
+    buildFeatures {
+        buildConfig true
+    }
+
+    signingConfigs {
+        release {
+            if (keyFile.exists()) {
+                storeFile file(keyProps['storeFile'])
+                storePassword keyProps['storePassword']
+                keyAlias keyProps['keyAlias']
+                keyPassword keyProps['keyPassword']
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            signingConfig signingConfigs.release
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    lint {
+        checkReleaseBuilds false
+    }
+}

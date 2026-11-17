@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="appName">Mentor</string>
+    <color name="navy">#16202B</color>
+
+    <style name="MentorTheme" parent="@android:style/Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/navy</item>
+        <item name="android:statusBarColor">@color/navy</item>
+        <item name="android:navigationBarColor">@color/navy</item>
+        <item name="android:colorPrimary">@color/navy</item>
+        <item name="android:colorAccent">#7FB2DD</item>
+    </style>
+</resources>

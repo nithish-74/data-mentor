@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Data Architect Mentor</title>
+  <meta name="description" content="Learn data modeling and architecture in 12 weeks with a mentor that reviews your work.">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="theme-color" content="#16202b">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Mentor">
+  <link rel="apple-touch-icon" href="/static/icons/apple-touch-icon.png">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2316202b'/%3E%3Crect x='6' y='8' width='12' height='16' rx='2' fill='none' stroke='%237fb2dd' stroke-width='2'/%3E%3Cpath d='M18 16h6M24 11l-4 5 4 5' fill='none' stroke='%23f6d365' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,650&family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+  <link rel="stylesheet" href="/static/style.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js"></script>
+</head>
+<body>
+  <!-- Sign in -->
+  <div id="signin" class="signin" hidden>
+    <section class="signin-art">
+      <a class="brand" href="/" style="color:#fff">
+        <svg width="28" height="28" viewBox="0 0 32 32" aria-hidden="true"><rect x="5" y="7" width="13" height="18" rx="2" fill="none" stroke="#7fb2dd" stroke-width="2"/><path d="M18 16h7M25 11l-4 5 4 5" fill="none" stroke="#f6d365" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Data Architect Mentor
+      </a>
+      <h1>Learn to model data the way architects do.</h1>
+      <p>One topic a day for twelve weeks, from keys and normal forms to Data Vault, the lakehouse and
+        governance. Each lesson ends with a real design task, and your mentor reviews it like a senior
+        architect would.</p>
+      <svg class="erd" viewBox="0 0 520 170" role="img" aria-label="Diagram: a learner takes many lessons, each lesson covers one topic">
+        <rect class="box" x="1" y="30" width="140" height="96" rx="6"/><rect class="head" x="1" y="30" width="140" height="26" rx="6"/>
+        <text x="14" y="48">learner</text><text x="14" y="76"><tspan class="key">PK</tspan> username</text><text x="14" y="96">streak_days</text><text x="14" y="116">weak_areas</text>
+        <rect class="box" x="190" y="30" width="140" height="96" rx="6"/><rect class="head" x="190" y="30" width="140" height="26" rx="6"/>
+        <text x="203" y="48">lesson</text><text x="203" y="76"><tspan class="key">PK</tspan> lesson_no</text><text x="203" y="96">assignment</text><text x="203" y="116">score /10</text>
+        <rect class="box" x="379" y="30" width="140" height="96" rx="6"/><rect class="head" x="379" y="30" width="140" height="26" rx="6"/>
+        <text x="392" y="48">topic</text><text x="392" y="76"><tspan class="key">PK</tspan> week_no</text><text x="392" y="96">module</text><text x="392" y="116">ticked ✓</text>
+        <!-- learner ||——< lesson -->
+        <path class="line" d="M141 78h49"/><path class="line" d="M147 72v12M152 72v12"/><path class="line" d="M190 72l-9 6 9 6"/>
+        <!-- lesson >——|| topic -->
+        <path class="line" d="M330 78h49"/><path class="line" d="M330 72l9 6-9 6"/><path class="line" d="M368 72v12M373 72v12"/>
+        <text x="146" y="150" style="fill:#8fa3b6;font-size:11px">one learner · many lessons · each covers one topic</text>
+      </svg>
+      <div class="facts"><span><b>60</b> topics</span><span><b>12</b> weeks</span><span><b>~20 min</b> a day</span><span>Azure · AWS · GCP</span></div>
+    </section>
+    <section class="signin-form">
+      <form id="signin-form" novalidate>
+        <div class="stack" style="gap:6px">
+          <h2 style="font-size:1.5rem">Sign in</h2>
+          <p class="muted">New here? Pick any username and you're in. Use the same one next time to carry on where you stopped.</p>
+        </div>
+        <p id="invite-note" class="note" hidden>You've been invited. Pick a username to join.</p>
+        <label class="field" for="f-username"><span>Username</span>
+          <input id="f-username" name="username" required minlength="3" maxlength="30" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="e.g. ravi_k"></label>
+        <label class="field" for="f-password" id="pw-field" hidden><span>Admin password</span>
+          <input id="f-password" name="password" type="password" autocomplete="current-password">
+          <span class="hint" style="font-weight:400">This username has admin access, so it needs the password from the server's settings.</span></label>
+        <label class="field" for="invite-code" id="need-invite" hidden><span>Invite code</span>
+          <input id="invite-code" maxlength="20" placeholder="e.g. 3FA9C21B" autocapitalize="characters">
+          <span class="hint" style="font-weight:400">New usernames need an invite code from the admin.</span></label>
+        <button class="btn primary" type="submit" style="justify-content:center;padding:11px">Continue</button>
+        <p id="signin-error" class="error" role="alert" hidden></p>
+        <p class="hint">No email, no password for learners. Your username is your key, so keep it to yourself.</p>
+      </form>
+      <div id="signin-app" style="width:100%;max-width:360px;margin-top:24px"></div>
+    </section>
+  </div>
+
+  <!-- App -->
+  <div id="shell" class="shell" hidden>
+    <nav class="rail" aria-label="Main">
+      <a class="brand" href="#home">
+        <svg width="26" height="26" viewBox="0 0 32 32" aria-hidden="true"><rect x="5" y="7" width="13" height="18" rx="2" fill="none" stroke="#7fb2dd" stroke-width="2"/><path d="M18 16h7M25 11l-4 5 4 5" fill="none" stroke="#f6d365" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Mentor
+      </a>
+      <a class="nav" href="#home" data-view="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11l8-6 8 6v8a1 1 0 0 1-1 1h-4v-6h-6v6H5a1 1 0 0 1-1-1z"/></svg><span>Today</span></a>
+      <a class="nav" href="#learn" data-view="learn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H11v16H5.5A1.5 1.5 0 0 1 4 18.5zM20 5.5A1.5 1.5 0 0 0 18.5 4H13v16h5.5a1.5 1.5 0 0 0 1.5-1.5z"/></svg><span>Lessons</span></a>
+      <a class="nav" href="#progress" data-view="progress"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M4 9h16M9 13l2 2 4-4"/></svg><span>Progress</span></a>
+      <a class="nav" href="#tests" data-view="tests"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4h6M10 4v2h4V4M7 6h10v14H7z"/><path d="M10 12l1.5 1.5L14 11M10 17h4"/></svg><span>Tests</span></a>
+      <a class="nav" href="#articles" data-view="articles"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5h11v14H6a1 1 0 0 1-1-1z"/><path d="M16 9h3v9a1 1 0 0 1-1 1h-2M8 9h5M8 12h5M8 15h3"/></svg><span>Articles</span><span class="badge" id="art-badge" hidden></span></a>
+      <a class="nav" href="#ask" data-view="ask"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5h14v10H10l-4 4v-4H5z"/></svg><span>Ask</span></a>
+      <a class="nav admin-only" href="#people" data-view="people" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="3"/><path d="M4 19a5 5 0 0 1 10 0M16 7a3 3 0 0 1 0 6M18 19a5 5 0 0 0-2-4"/></svg><span>People</span></a>
+      <a class="nav" href="#profile" data-view="profile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></svg><span>You</span></a>
+      <div class="me" id="me-box"></div>
+    </nav>
+    <main class="main"><div id="view" class="page"></div></main>
+  </div>
+
+  <div id="toast" class="toast" role="status" hidden></div>
+  <script src="/static/app.js"></script>
+</body>
+</html>

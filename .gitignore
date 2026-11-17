@@ -1,0 +1,15 @@
+# secrets and personal data never go into the repository
+.env
+data/
+dist/
+*.jks
+keystore.properties
+deploy_public_key.txt
+
+# build output and local tools
+.venv/
+__pycache__/
+installers/android/build/
+installers/android/.gradle/
+installers/android/local.properties
+installers/android/app/build/
