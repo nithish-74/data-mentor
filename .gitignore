@@ -13,3 +13,4 @@ installers/android/build/
 installers/android/.gradle/
 installers/android/local.properties
 installers/android/app/build/
+/ngrok

@@ -56,7 +56,7 @@ NGROK_DOMAIN = _get("NGROK_DOMAIN").replace("https://", "").strip("/")
 def _find_ngrok():
     import shutil
     local = Path(os.getenv("LOCALAPPDATA", ""))
-    for p in (_get("NGROK"), str(RUNTIME / "tools" / "ngrok.exe"), shutil.which("ngrok"),
+    for p in (_get("NGROK"), str(HERE / "ngrok"), str(RUNTIME / "tools" / "ngrok.exe"), shutil.which("ngrok"),
               str(local / "Microsoft" / "WinGet" / "Links" / "ngrok.exe"),
               str(local / "Microsoft" / "WindowsApps" / "ngrok.exe")):  # Microsoft Store install (app alias)
         if p and os.path.lexists(p):  # lexists: Store app aliases are links that plain exists() rejects
