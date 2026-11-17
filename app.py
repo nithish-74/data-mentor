@@ -55,6 +55,24 @@ async def push_daily(uid):
         await push.send(uid, m["title"], m["body"], m["url"], m["tag"])
 
 
+async def keep_awake():
+    """Render's free plan puts a service to sleep after 15 minutes without visitors, and visits through the
+    ngrok link don't count. Visiting our own Render address every 10 minutes keeps it awake around the clock."""
+    import httpx
+    if not cfg.RENDER_URL:
+        return
+    await asyncio.sleep(60)
+    async with httpx.AsyncClient(timeout=30, headers={"User-Agent": "DataMentor-keepawake"}) as http:
+        while True:
+            try:
+                r = await http.get(f"{cfg.RENDER_URL}/api/config")
+                if r.status_code != 200:
+                    log.warning("Keep-awake visit got %s", r.status_code)
+            except Exception as e:
+                log.warning("Keep-awake visit failed: %s", type(e).__name__)
+            await asyncio.sleep(600)
+
+
 async def article_refresher():
     """Checks the blogs every 3 hours (first check a minute after start)."""
     await asyncio.sleep(60)
@@ -158,11 +176,16 @@ class Tunnel:
             started = False
             for line in self.proc.stdout:
                 if not started and ("authentication failed" in line or "ERR_NGROK_" in line):
-                    # bad token / domain: don't leave the site offline, use the Cloudflare link instead
-                    log.error("ngrok refused to start (check NGROK_AUTHTOKEN / NGROK_DOMAIN in .env). "
-                              "Using the Cloudflare tunnel for now.")
-                    self.stopping_ngrok = True
+                    msg = re.search(r'err="?([^"]+)', line)
+                    log.error("ngrok refused to start: %s", (msg.group(1) if msg else line.strip())[:200])
                     self.proc.terminate()
+                    if "authentication failed" not in line or not os.path.exists(cfg.CLOUDFLARED):
+                        # e.g. the link is still held by the previous copy for a moment after a restart: try again
+                        _time.sleep(30)
+                        if not self.stopping:
+                            return self.start_ngrok()
+                        return
+                    # a bad token on a PC with cloudflared: don't leave the site offline, use the Cloudflare link
                     cfg.USE_NGROK = False
                     return self.start()
                 if "started tunnel" in line:
@@ -225,6 +248,7 @@ async def lifespan(_app):
         log.info("Telegram bot @%s running", telegram.bot_username)
     task = asyncio.create_task(scheduler())
     refresher = asyncio.create_task(article_refresher())
+    awake = asyncio.create_task(keep_awake())
     announcer = asyncio.create_task(announce_links()) if cfg.TUNNEL else None
     log.info("Website: http://localhost:%d  (people: %d, AI: %s)", cfg.WEB_PORT, len(users.people),
              ", ".join(f"{p.name}:{p.model}" for p in mentor.ai.providers))
@@ -233,6 +257,7 @@ async def lifespan(_app):
     finally:
         task.cancel()
         refresher.cancel()
+        awake.cancel()
         if announcer:
             announcer.cancel()
         tunnel.stop()

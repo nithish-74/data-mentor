@@ -37,6 +37,7 @@ ON_RENDER = bool(_get("RENDER"))  # Render sets RENDER=true, PORT and RENDER_EXT
 WEB_PORT = int(_get("PORT") or _get("WEB_PORT", "8000"))
 WEB_HOST = "0.0.0.0" if ON_RENDER else _get("WEB_HOST", "127.0.0.1")
 PUBLIC_URL = (_get("RENDER_EXTERNAL_URL") or _get("PUBLIC_URL", f"http://localhost:{WEB_PORT}")).rstrip("/")
+RENDER_URL = _get("RENDER_EXTERNAL_URL").rstrip("/")  # Render's own address (kept even when a tunnel takes over)
 ADMIN_USERNAME = _get("ADMIN_USERNAME").lower()  # this username is always admin (else: first person to join)
 REQUIRE_INVITE = _get("REQUIRE_INVITE", "false").lower() == "true"  # true = new usernames need an invite code
 DAILY_AI_LIMIT = int(_get("DAILY_AI_LIMIT", "40"))  # per person per day, protects the shared free quota
